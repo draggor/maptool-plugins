@@ -1,6 +1,8 @@
 var net = require('net')
-,   cmd = require('./cmd')
-;
+  , cmd = require('./cmd')
+  , util = require('./util')
+  , config = require('./config')
+  ;
 
 function send(msg) {
 	var bmsg = new Buffer(msg);
@@ -18,8 +20,12 @@ function send(msg) {
 }
 
 var server = net.createServer(function(c) {
-	var buf = '';
+	var buf = ''
+	  , id = util.getUniqueId()
+	  ;
 	c.send = send;
+	c.id = id;
+	cmd.connections[id] = c;
 	console.log('Client Connected!');
 	c.on('data', function(data) {
 		console.log(data.length);
@@ -35,4 +41,4 @@ var server = net.createServer(function(c) {
 	});
 });
 
-server.listen('1337');
+server.listen(config.port);
