@@ -2,6 +2,7 @@ var net = require('net')
   , cmd = require('./cmd')
   , util = require('./util')
   , config = require('./config')
+  , repl = require('repl')
   ;
 
 function send(msg) {
@@ -42,3 +43,6 @@ var server = net.createServer(function(c) {
 });
 
 server.listen(config.port);
+
+r = repl.start();
+r.context.cmd = cmd;

@@ -1,0 +1,7 @@
+# Filetypes
+*.swp
+.*.swp
+
+# Paths
+/data
+/node_modules
