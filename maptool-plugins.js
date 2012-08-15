@@ -44,5 +44,5 @@ var server = net.createServer(function(c) {
 
 server.listen(config.port);
 
-r = repl.start();
+r = repl.start('mt> ');
 r.context.cmd = cmd;

@@ -102,7 +102,7 @@ var renderCard = {
 	}
 };
 var deck = util.randomize(formattedCards.slice());
-var initDeck = util.randomize(formattedCards.slice());
+var initDeck = util.randomize(cards.slice());
 CMD.card = function(args) {
 	args.client.send(formattedCards[Math.floor(Math.random() * 54)]);
 };
@@ -148,17 +148,17 @@ CMD.initshuffle.marshal = true;
 CMD.initshuffle.help = '/p initshuffle: Shuffle the initiative deck.';
 
 CMD.init = function(args) {
-	if(CMD.init.waiting && !CMD.init.received[args.client.id]) {
-		CMD.init.received[args.client.id] = true;
+	if(CMD.init.waiting && !CMD.init.received[args.client.ident]) {
+		CMD.init.received[args.client.ident] = true;
 		CMD.init.waiting--;
 		var c = initDeck.pop();
-		args.client.send('Initiative: ' + c);
-		CMD.init.map[args.client.id] = c;
+		args.client.send('Initiative: ' + renderCard.maptool(c));
+		CMD.init.map[args.client.ident] = c;
 		if(CMD.init.waiting === 0) {
 			CMD.initshow(args);
 		}
 		if(initDeck.length === 0) {
-			initDeck = util.randomize(formattedCards.slice());
+			initDeck = util.randomize(cards.slice());
 			args.client.send('Last card drawn, Initiative Deck shuffling!');
 		}
 	}
@@ -166,6 +166,26 @@ CMD.init = function(args) {
 CMD.init.map = {};
 CMD.init.auth = true;
 CMD.init.help = '/p init: Draw an initiative card.  If the last is drawn, shuffle.';
+
+CMD.minit = function(args) {
+	if(CMD.init.waiting && args.str && args.str.length > 0 && !CMD.init.received[args.str]) {
+		CMD.init.received[args.str] = true;
+		CMD.init.waiting--;
+		var c = initDeck.pop();
+		args.client.send(args.str + ' Initiative: ' + renderCard.maptool(c));
+		CMD.init.map[args.str] = c;
+		if(CMD.init.waiting === 0) {
+			CMD.initshow(args);
+		}
+		if(initDeck.length === 0) {
+			initDeck = util.randomize(cards.slice());
+			args.client.send('Last card drawn, Initiative Deck shuffling!');
+		}
+	}
+};
+CMD.minit.auth = true;
+CMD.minit.marshal = true;
+CMD.minit.help = '/p minit name: Draw an initiative card for name';
 
 CMD.initstart = function(args) {
 	CMD.init.waiting = parseInt(args.str);
@@ -176,37 +196,38 @@ CMD.initstart = function(args) {
 CMD.initstart.marshal = true;
 CMD.initstart.help = '/p initstart qty: Enable the /p init command for qty number of unique clients.';
 
+function sortCards (a, b) {
+	var ac = CMD.init.map[a]
+	  , bc = CMD.init.map[b]
+	  , avr = cardValues.indexOf(ac[0])
+	  , bvr = cardValues.indexOf(bc[0])
+	  , asr = cardSuits.indexOf(ac[1])
+	  , bsr = cardSuits.indexOf(bc[1])
+	  ;
+
+	if(asr < 0 && bsr < 0) {
+		return ac[1] === 'R' ? -1 : 1;
+	} else if(asr < 0) {
+		return -1;
+	} else if(bsr < 0) {
+		return 1;
+	} else {
+		var result = bvr - avr;
+		if(result === 0) {
+			return bsr - asr;
+		} else {
+			return result;
+		}
+	}
+}
+
 CMD.initshow = function(args) {
 	var str = ''
-	  , order = Object.keys(CMD.init.map)
+	  , order = Object.keys(CMD.init.map).sort(sortCards)
 	  ;
-	order.sort(function(a, b) {
-		var ac = CMD.init.map[a]
-		  , bc = CMD.init.map[b]
-		  , avr = cardValues.indexOf(ac[0])
-		  , bvr = cardValues.indexOf(bc[0])
-		  , asr = cardSuits.indexOf(ac[1])
-		  , bsr = cardSuits.indexOf(bc[1])
-		  ;
-
-		if(asr < 0 && bsr < 0) {
-			return ac[1] === 'R' ? -1 : 1;
-		} else if(asr < 0) {
-			return -1;
-		} else if(bsr < 0) {
-			return 1;
-		} else {
-			var result = bvr - avr;
-			if(result === 0) {
-				return bsr - asr;
-			} else {
-				return result;
-			}
-		}
-	});
 
 	for(var k in order) {
-		str += connections[order[k]].ident + ': ' + CMD.init.map[order[k]] + ' ';
+		str += order[k] + ': ' + renderCard.maptool(CMD.init.map[order[k]]) + ' ';
 	}
 	if(str.length > 0) {
 		args.client.send(str);
