@@ -242,24 +242,25 @@ CMD.ident = function(args) {
 	if(args.str && args.str.length > 0) {
 		var sp = args.str.split(' ')
 		  , name = sp[0]
+		  , nameLower = sp[0].toLowerCase()
 		  , pass = sp[1]
-		  , p = PLAYERS[name]
+		  , p = PLAYERS[nameLower]
 		  ;
 		if(!pass || pass.length === 0) {
 			args.client.send('You must supply a password!');
 			return;
 		}
-		if(p && p.name === name && p.pass === pass) {
+		if(p && p.pass === pass) {
 			args.client.auth = true;
 			args.client.ident = name;
 			args.client.pass = pass;
 			args.client.send('Ident set to ' + name);
 		} else if(p) {
 			args.client.send('Ident Error: Wrong password for ' + name);
-		} else if(PLAYERS[args.client.ident]) {
+		} else if(args.client.ident && PLAYERS[args.client.ident.toLowerCase()]) {
 			args.client.send('Ident Error: You already have an ident: ' + args.client.ident);
 		} else {
-			PLAYERS[name] = p = {};
+			PLAYERS[nameLower] = p = {};
 			p.fate = {white:0,red:0,blue:0,black:0};
 			p.name = name;
 			p.pass = pass;
@@ -295,7 +296,7 @@ CMD.fate = function(args) {
 	}
 
 	var chip = pot.pop()
-	  , p = PLAYERS[args.client.ident]
+	  , p = PLAYERS[args.client.ident.toLowerCase()]
 	  ;
 	p.fate[chip]++;
 	args.client.send(renderChip.maptool(chip));
@@ -310,7 +311,7 @@ CMD.mfate = function(args) {
 	}
 	
 	var chip = pot.pop()
-	  , p = PLAYERS[args.client.ident]
+	  , p = PLAYERS[args.client.ident.toLowerCase()]
 	  ;
 	while(chip === 'black') {
 		pot.push(chip);
@@ -325,7 +326,7 @@ CMD.mfate.auth = true;
 CMD.mfate.help = '/p mfate: Draw a fate chip for the Marshal.  This tries drawing until a non-black chip is found.';
 
 CMD.spend = function(args) {
-	var p = PLAYERS[args.client.ident];
+	var p = PLAYERS[args.client.ident.toLowerCase()];
 	if(args.str && args.str.length > 0) {
 		if(p.fate[args.str] && p.fate[args.str] > 0) {
 			p.fate[args.str]--;
@@ -364,7 +365,7 @@ CMD.addfate.marshal = true;
 CMD.addfate.help = '/p addfate type (qty): Add 1 fate chip of the given type or, if qty is specified, add that many instead.';
 
 CMD.showfate = function(args) {
-	var p = PLAYERS[args.client.ident]
+	var p = PLAYERS[args.client.ident.toLowerCase()]
 	  , str = ''
 	  ;
 	for(var k in p.fate) {
